@@ -449,7 +449,7 @@ const COLUMN_MAP = {
 };
 
 let currentRows = [];
-let sortState = { key: null, asc: true };
+let sortState = { key: 'visaDate', asc: true };
 
 async function loadData() {
   try {
@@ -498,9 +498,27 @@ function renderStats(rows) {
   `).join("");
 }
 
+function parseDateValue(str) {
+  if (!str || str.trim() === "") return null;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function getSorted(rows) {
   if (!sortState.key) return rows;
   const keyMap = COLUMN_MAP[sortState.key];
+
+  if (sortState.key === "visaDate" || sortState.key === "confirmationDate") {
+    return [...rows].sort((a, b) => {
+      const ad = parseDateValue(a[keyMap]);
+      const bd = parseDateValue(b[keyMap]);
+      if (ad === null && bd === null) return 0;
+      if (ad === null) return 1;
+      if (bd === null) return -1;
+      return sortState.asc ? ad - bd : bd - ad;
+    });
+  }
+
   return [...rows].sort((a, b) => {
     const av = (a[keyMap] || "").toString();
     const bv = (b[keyMap] || "").toString();
