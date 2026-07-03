@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Visa Experience Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f7f3ea;
+  --bg-soft: #fffaf0;
+  --card: rgba(255, 255, 255, 0.84);
+  --card-solid: #ffffff;
+  --ink: #111827;
+  --muted: #64748b;
+  --faint: #94a3b8;
+  --line: rgba(30, 41, 59, 0.12);
+  --navy: #17213d;
+  --navy-2: #263b67;
+  --gold: #b68a46;
+  --gold-2: #8c6835;
+  --green: #3f7d58;
+  --red: #b64444;
+  --blue: #315d96;
+  --shadow: 0 22px 70px rgba(17, 24, 39, 0.10);
+  --shadow-sm: 0 10px 26px rgba(17, 24, 39, 0.08);
+  --radius: 24px;
+  --radius-sm: 16px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #080c16;
+  --bg-soft: #111827;
+  --card: rgba(17, 24, 39, 0.78);
+  --card-solid: #111827;
+  --ink: #e5e7eb;
+  --muted: #a6b1c2;
+  --faint: #7d8aa0;
+  --line: rgba(226, 232, 240, 0.12);
+  --navy: #0b1020;
+  --navy-2: #1e335b;
+  --gold: #d0a85f;
+  --gold-2: #f0c979;
+  --green: #79c38f;
+  --red: #ff8b8b;
+  --blue: #8dbbff;
+  --shadow: 0 22px 70px rgba(0, 0, 0, 0.36);
+  --shadow-sm: 0 10px 26px rgba(0, 0, 0, 0.24);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  min-height: 100vh;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(182, 138, 70, 0.22), transparent 32rem),
+    radial-gradient(circle at 82% 12%, rgba(49, 93, 150, 0.18), transparent 34rem),
+    linear-gradient(180deg, var(--bg-soft), var(--bg));
+  line-height: 1.58;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(148,163,184,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.07) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to bottom, black, transparent 76%);
+}
+a { color: inherit; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+
+.shell { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  background: rgba(23, 33, 61, 0.84);
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.topbar-inner {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: white;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--gold), #f2d08b);
+  color: #17213d;
+  box-shadow: 0 8px 22px rgba(182, 138, 70, 0.28);
+}
+.nav-actions { display: flex; align-items: center; gap: 0.6rem; }
+.nav-link, .icon-btn, .primary-btn {
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  color: #eef2ff;
+  text-decoration: none;
+  background: rgba(255,255,255,0.08);
+  transition: transform 0.2s ease, background 0.2s ease, border 0.2s ease;
+}
+.nav-link { padding: 0.62rem 0.95rem; font-size: 0.88rem; font-weight: 700; }
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+}
+.primary-btn {
+  padding: 0.72rem 1.05rem;
+  background: linear-gradient(135deg, var(--gold), #dcb76a);
+  color: #17213d;
+  border-color: transparent;
+  font-weight: 800;
+}
+.nav-link:hover, .icon-btn:hover, .primary-btn:hover { transform: translateY(-1px); }
+.nav-link:hover, .icon-btn:hover { background: rgba(255,255,255,0.14); }
+.primary-btn:hover { filter: brightness(1.04); }
+.hidden-btn { display: none !important; }
+
+.hero { padding: 4.6rem 0 2rem; position: relative; }
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+.hero-card, .side-card, .panel, .record-card, .stat-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+.hero-card {
+  border-radius: calc(var(--radius) + 8px);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  position: relative;
+  overflow: hidden;
+}
+.hero-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -8rem -10rem auto;
+  width: 20rem;
+  height: 20rem;
+  background: radial-gradient(circle, rgba(182,138,70,0.24), transparent 68%);
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--gold-2);
+  font-size: 0.78rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 900;
+  margin-bottom: 1rem;
+}
+h1 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(2.25rem, 5vw, 4.6rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+  max-width: 780px;
+}
+.hero-text {
+  margin-top: 1.15rem;
+  color: var(--muted);
+  font-size: clamp(0.98rem, 1.6vw, 1.12rem);
+  max-width: 720px;
+}
+.hero-actions { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 1.65rem; }
+.ghost-btn, .solid-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 46px;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 850;
+  border: 1px solid var(--line);
+}
+.solid-btn { color: #17213d; background: linear-gradient(135deg, var(--gold), #f0c979); border: 0; }
+.ghost-btn { background: rgba(255,255,255,0.06); color: var(--ink); }
+.meta-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.3rem; }
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.38rem 0.72rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  background: rgba(255,255,255,0.07);
+}
+.side-card {
+  border-radius: var(--radius);
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100%;
+}
+.side-title { font-weight: 900; font-size: 1.05rem; letter-spacing: -0.02em; }
+.side-text { color: var(--muted); font-size: 0.92rem; margin-top: 0.55rem; }
+.progress-wrap { margin: 1.4rem auto 1rem; width: 190px; height: 190px; position: relative; }
+.progress-ring { transform: rotate(-90deg); width: 190px; height: 190px; }
+.progress-bg { fill: none; stroke: rgba(148,163,184,0.22); stroke-width: 14; }
+.progress-value { fill: none; stroke: var(--gold); stroke-width: 14; stroke-linecap: round; stroke-dasharray: 502; stroke-dashoffset: 502; transition: stroke-dashoffset 0.8s ease; }
+.progress-center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.progress-number { font-family: "Playfair Display", serif; font-size: 2.9rem; font-weight: 800; line-height: 1; }
+.progress-label { color: var(--muted); font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.35rem; }
+.side-foot { color: var(--faint); font-size: 0.82rem; text-align: center; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.stat-card { border-radius: var(--radius-sm); padding: 1.1rem; box-shadow: var(--shadow-sm); }
+.stat-kicker { color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 900; }
+.stat-value { margin-top: 0.4rem; font-size: 2rem; font-weight: 900; letter-spacing: -0.04em; }
+.stat-note { color: var(--faint); font-size: 0.78rem; margin-top: 0.28rem; }
+
+.section { margin-top: 2rem; }
+.section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.section-head h2 { font-size: 1.55rem; letter-spacing: -0.04em; }
+.section-head p { color: var(--muted); font-size: 0.92rem; margin-top: 0.2rem; }
+.panel { border-radius: var(--radius); padding: 1.05rem; box-shadow: var(--shadow-sm); }
+.toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) 180px 160px 160px auto; gap: 0.75rem; align-items: center; }
+.input-wrap { position: relative; }
+.input-wrap svg { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--faint); }
+input, select {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.48);
+  color: var(--ink);
+  border-radius: 14px;
+  padding: 0 0.9rem;
+  outline: none;
+}
+[data-theme="dark"] input, [data-theme="dark"] select { background: rgba(15, 23, 42, 0.72); }
+.input-wrap input { padding-left: 2.45rem; }
+input:focus, select:focus { border-color: rgba(182,138,70,0.68); box-shadow: 0 0 0 4px rgba(182,138,70,0.13); }
+.refresh-btn {
+  min-height: 46px;
+  white-space: nowrap;
+  border: 1px solid var(--line);
+  background: var(--navy);
+  color: white;
+  border-radius: 14px;
+  padding: 0 0.95rem;
+  font-weight: 850;
+}
+.results-meta { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; color: var(--muted); font-size: 0.86rem; padding: 0.8rem 0.25rem 0.1rem; }
+.status-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; background: var(--green); margin-right: 0.35rem; }
+.status-dot.loading { background: var(--gold); animation: pulse 0.9s ease infinite alternate; }
+.status-dot.error { background: var(--red); }
+@keyframes pulse { from { opacity: 0.42; } to { opacity: 1; } }
+
+.records-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+.record-card { border-radius: var(--radius); padding: 1.1rem; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
+.record-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, var(--gold), var(--navy-2));
+}
+.record-top { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; padding-left: 0.3rem; }
+.record-title { font-size: 1.05rem; font-weight: 900; letter-spacing: -0.03em; }
+.record-subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.15rem; }
+.badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.4rem; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  font-weight: 850;
+  font-size: 0.73rem;
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.badge.green { background: rgba(63,125,88,0.14); color: var(--green); }
+.badge.gold { background: rgba(182,138,70,0.16); color: var(--gold-2); }
+.badge.blue { background: rgba(49,93,150,0.14); color: var(--blue); }
+.badge.red { background: rgba(182,68,68,0.13); color: var(--red); }
+.dates-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-top: 0.9rem; }
+.date-box {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.34);
+  min-width: 0;
+}
+[data-theme="dark"] .date-box { background: rgba(15,23,42,0.38); }
+.date-label { color: var(--faint); font-weight: 900; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.date-value { color: var(--ink); font-weight: 800; margin-top: 0.25rem; word-break: break-word; }
+.experience {
+  margin-top: 0.9rem;
+  color: var(--muted);
+  border-top: 1px dashed var(--line);
+  padding-top: 0.9rem;
+  white-space: pre-wrap;
+}
+.experience.empty { color: var(--faint); font-style: italic; }
+.utility-row { margin-top: 0.85rem; display: flex; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; color: var(--faint); font-size: 0.79rem; }
+
+.state-box {
+  margin-top: 1rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(255,255,255,0.25);
+}
+.state-box strong { display: block; color: var(--ink); margin-bottom: 0.35rem; }
+.hidden { display: none !important; }
+
+.pagination { display: flex; justify-content: center; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-top: 1.1rem; }
+.page-btn {
+  border: 1px solid var(--line);
+  background: var(--card-solid);
+  color: var(--ink);
+  border-radius: 12px;
+  min-width: 42px;
+  min-height: 40px;
+  padding: 0 0.75rem;
+  font-weight: 850;
+}
+.page-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+.page-btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+.columns-help {
+  margin-top: 1rem;
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  background: rgba(182,138,70,0.11);
+  border: 1px solid rgba(182,138,70,0.22);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.columns-help summary { color: var(--ink); font-weight: 900; cursor: pointer; }
+.columns-help ul { margin: 0.7rem 0 0 1.1rem; }
+.columns-help li { margin: 0.25rem 0; }
+
+footer { padding: 2.5rem 0 3rem; text-align: center; color: var(--faint); font-size: 0.84rem; }
+
+@media (max-width: 980px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .toolbar { grid-template-columns: 1fr 1fr; }
+  .toolbar .input-wrap { grid-column: 1 / -1; }
+  .records-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .shell { width: min(100% - 22px, 1160px); }
+  .topbar-inner { min-height: 62px; }
+  .brand span:last-child { display: none; }
+  .nav-link { display: none; }
+  .hero { padding-top: 2.1rem; }
+  .hero-card { padding: 1.25rem; }
+  .hero-actions { flex-direction: column; }
+  .ghost-btn, .solid-btn { width: 100%; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .toolbar { grid-template-columns: 1fr; }
+  .dates-row { grid-template-columns: 1fr; }
+  .record-top { flex-direction: column; }
+  .badges { justify-content: flex-start; }
+}
+</style>
+</head>
+<body>
+<nav class="topbar">
+  <div class="shell topbar-inner">
+    <a class="brand" href="index.html" aria-label="Back to dashboard">
+      <span class="brand-icon">✦</span>
+      <span>Visa Experience Archive</span>
+    </a>
+    <div class="nav-actions">
+      <a class="nav-link" href="index.html">Main Dashboard</a>
+      <a class="nav-link" href="blog.html">Blog</a>
+      <a class="primary-btn hidden-btn" id="submitExperienceTop" href="#" target="_blank" rel="noopener">Share Experience</a>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode">☾</button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="shell hero-grid">
+    <section class="hero-card">
+      <p class="eyebrow">✦ Student visa journey</p>
+      <h1>Visa Experience Archive</h1>
+      <p class="hero-text">
+        A separate page for collecting real visa timelines and personal experiences: Universitaly confirmation date, visa appointment date, visa receiving date, interview status, and a written explanation of the process.
+      </p>
+      <div class="hero-actions">
+        <a class="solid-btn hidden-btn" id="submitExperienceHero" href="#" target="_blank" rel="noopener">Share Your Visa Experience</a>
+        <a class="ghost-btn" href="#records">Browse Experiences</a>
+      </div>
+      <div class="meta-row">
+        <span class="meta-pill"><span class="status-dot loading" id="statusDot"></span><span id="syncStatus">Loading live data...</span></span>
+        <span class="meta-pill" id="lastUpdated">Last synced: —</span>
+      </div>
+    </section>
+
+    <aside class="side-card">
+      <div>
+        <p class="side-title">Visa received rate</p>
+        <p class="side-text">Based on submitted experiences with a filled visa receiving date.</p>
+      </div>
+      <div class="progress-wrap" aria-label="Visa received progress">
+        <svg class="progress-ring" viewBox="0 0 190 190">
+          <circle class="progress-bg" cx="95" cy="95" r="80"></circle>
+          <circle class="progress-value" id="progressCircle" cx="95" cy="95" r="80"></circle>
+        </svg>
+        <div class="progress-center">
+          <div>
+            <div class="progress-number" id="progressNumber">0%</div>
+            <div class="progress-label">Received</div>
+          </div>
+        </div>
+      </div>
+      <p class="side-foot" id="progressFoot">Waiting for data...</p>
+    </aside>
+  </div>
+
+  <div class="shell stats-grid" id="statsGrid"></div>
+</header>
+
+<main class="shell">
+  <section class="section" id="records">
+    <div class="section-head">
+      <div>
+        <h2>Visa Experience Records</h2>
+        <p>Search and filter real experiences without showing heavy analytics or charts.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" type="search" placeholder="Search university, program, dates, or experience text..." autocomplete="off" />
+        </div>
+        <select id="universityFilter"><option value="all">All universities</option></select>
+        <select id="interviewFilter">
+          <option value="all">All interviews</option>
+          <option value="yes">Interview: Yes</option>
+          <option value="no">Interview: No</option>
+        </select>
+        <select id="visaStatusFilter">
+          <option value="all">All visa results</option>
+          <option value="received">Visa received</option>
+          <option value="pending">Not received yet</option>
+        </select>
+        <button class="refresh-btn" id="refreshBtn">Refresh</button>
+      </div>
+      <div class="results-meta">
+        <span id="resultsCount">Loading records...</span>
+        <span id="sourceHint">Source: Google Sheets CSV</span>
+      </div>
+    </div>
+
+    <div id="recordsGrid" class="records-grid"></div>
+    <div id="pagination" class="pagination"></div>
+
+    <div id="loadingBox" class="state-box">
+      <strong>Loading visa experiences...</strong>
+      Reading the connected Google Sheet.
+    </div>
+    <div id="emptyBox" class="state-box hidden">
+      <strong>No matching experiences found.</strong>
+      Try clearing the filters or check whether the new visa experience columns exist in the Sheet.
+    </div>
+    <div id="errorBox" class="state-box hidden">
+      <strong>Could not load the data.</strong>
+      Check that your Google Sheet is public/published and that the CSV URL is correct.
+    </div>
+
+    <details class="columns-help">
+      <summary>Recommended Google Form / Sheet columns for this page</summary>
+      <ul>
+        <li>University name</li>
+        <li>Program name</li>
+        <li>When did you get your Universitaly summary confirmation?</li>
+        <li>When is your visa appointment?</li>
+        <li>When did you receive your visa?</li>
+        <li>Did you have an interview?</li>
+        <li>Describe your visa experience</li>
+      </ul>
+    </details>
+  </section>
+</main>
+
+<footer>
+  Data synced from Google Sheets · Visa Experience Archive
+</footer>
+
+<script>
+// ============================================================
+// CONFIG
+// 1) If you use the same spreadsheet, keep SHEET_ID.
+// 2) If the visa experiences are in another tab, change SHEET_GID.
+// 3) Best option: Publish that tab as CSV and paste the link in PUBLISHED_CSV_URL.
+// ============================================================
+const SHEET_ID = "1FpjTPs8_U8eSZ5h2jDz5dzv-pTLc66UQJE8wom7aM00";
+const SHEET_GID = "0";
+const PUBLISHED_CSV_URL = "";
+const EXPERIENCE_FORM_URL = "";
+
+const PAGE_SIZE = 8;
+let allRows = [];
+let normalizedRows = [];
+let currentPage = 1;
+
+const aliases = {
+  timestamp: ["Timestamp", "Submission time", "Submitted at"],
+  university: ["University name", "University", "University Name"],
+  program: ["Program name", "Program", "Major", "Course"],
+  confirmationDate: [
+    "When did you get your Universitaly summary confirmation?",
+    "Universitaly confirmation date",
+    "Confirmation Date",
+    "Summary confirmation date"
+  ],
+  appointmentDate: [
+    "When is your visa appointment?",
+    "Visa appointment date",
+    "Visa Appointment",
+    "Appointment Date"
+  ],
+  visaReceivedDate: [
+    "When did you receive your visa?",
+    "When did you get your visa?",
+    "Visa received date",
+    "Visa receiving date",
+    "Date of receiving visa",
+    "Visa issue date",
+    "Visa Date"
+  ],
+  interview: [
+    "Did you have an interview?",
+    "Interview",
+    "Interview status",
+    "Had interview?",
+    "Visa interview"
+  ],
+  experience: [
+    "Describe your visa experience",
+    "Visa experience",
+    "Experience text",
+    "Tell us about your visa experience",
+    "Write your visa experience"
+  ]
+};
+
+const els = {
+  themeToggle: document.getElementById("themeToggle"),
+  submitTop: document.getElementById("submitExperienceTop"),
+  submitHero: document.getElementById("submitExperienceHero"),
+  statusDot: document.getElementById("statusDot"),
+  syncStatus: document.getElementById("syncStatus"),
+  lastUpdated: document.getElementById("lastUpdated"),
+  progressCircle: document.getElementById("progressCircle"),
+  progressNumber: document.getElementById("progressNumber"),
+  progressFoot: document.getElementById("progressFoot"),
+  statsGrid: document.getElementById("statsGrid"),
+  searchInput: document.getElementById("searchInput"),
+  universityFilter: document.getElementById("universityFilter"),
+  interviewFilter: document.getElementById("interviewFilter"),
+  visaStatusFilter: document.getElementById("visaStatusFilter"),
+  refreshBtn: document.getElementById("refreshBtn"),
+  resultsCount: document.getElementById("resultsCount"),
+  recordsGrid: document.getElementById("recordsGrid"),
+  pagination: document.getElementById("pagination"),
+  loadingBox: document.getElementById("loadingBox"),
+  emptyBox: document.getElementById("emptyBox"),
+  errorBox: document.getElementById("errorBox")
+};
+
+function buildCsvUrl() {
+  const base = PUBLISHED_CSV_URL.trim() || `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+  return base + (base.includes("?") ? "&" : "?") + "cacheBust=" + Date.now();
+}
+
+function setStatus(type, text) {
+  els.statusDot.className = "status-dot" + (type === "loading" ? " loading" : type === "error" ? " error" : "");
+  els.syncStatus.textContent = text;
+}
+
+function getCell(row, names) {
+  for (const name of names) {
+    if (Object.prototype.hasOwnProperty.call(row, name) && String(row[name] ?? "").trim() !== "") {
+      return String(row[name]).trim();
+    }
+  }
+  const keys = Object.keys(row);
+  for (const wanted of names) {
+    const found = keys.find(k => normalizeHeader(k) === normalizeHeader(wanted));
+    if (found && String(row[found] ?? "").trim() !== "") return String(row[found]).trim();
+  }
+  return "";
+}
+
+function normalizeHeader(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9آ-ی]/g, "");
+}
+
+function normalizeRows(rows) {
+  return rows.map((row, index) => {
+    const item = {
+      id: index + 1,
+      timestamp: getCell(row, aliases.timestamp),
+      university: getCell(row, aliases.university) || "Unknown university",
+      program: getCell(row, aliases.program) || "Unknown program",
+      confirmationDate: getCell(row, aliases.confirmationDate),
+      appointmentDate: getCell(row, aliases.appointmentDate),
+      visaReceivedDate: getCell(row, aliases.visaReceivedDate),
+      interview: normalizeInterview(getCell(row, aliases.interview)),
+      experience: getCell(row, aliases.experience)
+    };
+    item.daysToVisa = daysBetween(item.appointmentDate, item.visaReceivedDate);
+    return item;
+  }).filter(item => item.university !== "Unknown university" || item.program !== "Unknown program" || item.experience || item.visaReceivedDate || item.appointmentDate);
+}
+
+function normalizeInterview(value) {
+  const v = String(value || "").trim();
+  const l = v.toLowerCase();
+  if (!v) return "Unknown";
+  if (["yes", "y", "true", "بله", "آره", "داشت", "داشتم"].some(x => l.includes(x))) return "Yes";
+  if (["no", "n", "false", "خیر", "نه", "نداشت", "نداشتم"].some(x => l.includes(x))) return "No";
+  return v;
+}
+
+function parseDateLoose(raw) {
+  if (!raw) return null;
+  const cleaned = String(raw).trim();
+  const direct = new Date(cleaned);
+  if (!Number.isNaN(direct.getTime())) return direct;
+  const match = cleaned.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (!match) return null;
+  let a = Number(match[1]);
+  let b = Number(match[2]);
+  let y = Number(match[3]);
+  if (y < 100) y += 2000;
+  let day = a;
+  let month = b;
+  if (a <= 12 && b > 12) { month = a; day = b; }
+  const parsed = new Date(y, month - 1, day);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function daysBetween(startRaw, endRaw) {
+  const start = parseDateLoose(startRaw);
+  const end = parseDateLoose(endRaw);
+  if (!start || !end) return null;
+  const diff = Math.round((end - start) / 86400000);
+  return Number.isFinite(diff) && diff >= 0 ? diff : null;
+}
+
+function escapeHtml(text) {
+  return String(text ?? "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+function highlight(text) {
+  const query = els.searchInput.value.trim();
+  const safe = escapeHtml(text || "—");
+  if (!query) return safe;
+  const pattern = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return safe.replace(new RegExp(`(${pattern})`, "ig"), "<mark>$1</mark>");
+}
+
+function isVisaReceived(item) {
+  return Boolean(item.visaReceivedDate && item.visaReceivedDate.trim());
+}
+
+function getFilteredRows() {
+  const q = els.searchInput.value.toLowerCase().trim();
+  const uni = els.universityFilter.value;
+  const interview = els.interviewFilter.value;
+  const visaStatus = els.visaStatusFilter.value;
+
+  return normalizedRows.filter(item => {
+    if (uni !== "all" && item.university !== uni) return false;
+    if (interview === "yes" && item.interview !== "Yes") return false;
+    if (interview === "no" && item.interview !== "No") return false;
+    if (visaStatus === "received" && !isVisaReceived(item)) return false;
+    if (visaStatus === "pending" && isVisaReceived(item)) return false;
+    if (!q) return true;
+    return [item.university, item.program, item.confirmationDate, item.appointmentDate, item.visaReceivedDate, item.interview, item.experience]
+      .some(v => String(v || "").toLowerCase().includes(q));
+  }).sort((a, b) => {
+    const bd = parseDateLoose(b.visaReceivedDate || b.appointmentDate || b.confirmationDate || b.timestamp);
+    const ad = parseDateLoose(a.visaReceivedDate || a.appointmentDate || a.confirmationDate || a.timestamp);
+    return (bd?.getTime() || 0) - (ad?.getTime() || 0);
+  });
+}
+
+function renderStats(rows) {
+  const total = rows.length;
+  const visaReceived = rows.filter(isVisaReceived).length;
+  const interviewYes = rows.filter(r => r.interview === "Yes").length;
+  const days = rows.map(r => r.daysToVisa).filter(n => Number.isFinite(n));
+  const avgDays = days.length ? Math.round(days.reduce((a, b) => a + b, 0) / days.length) : "—";
+
+  const stats = [
+    { label: "Total Experiences", value: total, note: "Submitted visa journeys" },
+    { label: "Visas Received", value: visaReceived, note: `${total ? Math.round((visaReceived / total) * 100) : 0}% of records` },
+    { label: "Had Interview", value: interviewYes, note: "Based on submitted answers" },
+    { label: "Avg. Days to Visa", value: avgDays, note: "From appointment to receiving" }
+  ];
+
+  els.statsGrid.innerHTML = stats.map(s => `
+    <article class="stat-card">
+      <div class="stat-kicker">${escapeHtml(s.label)}</div>
+      <div class="stat-value">${escapeHtml(s.value)}</div>
+      <div class="stat-note">${escapeHtml(s.note)}</div>
+    </article>
+  `).join("");
+
+  const percent = total ? Math.round((visaReceived / total) * 100) : 0;
+  const circumference = 2 * Math.PI * 80;
+  els.progressCircle.style.strokeDasharray = circumference;
+  els.progressCircle.style.strokeDashoffset = circumference - (percent / 100) * circumference;
+  els.progressNumber.textContent = `${percent}%`;
+  els.progressFoot.textContent = `${visaReceived} of ${total || 0} submitted records include a visa receiving date.`;
+}
+
+function renderUniversityOptions(rows) {
+  const current = els.universityFilter.value;
+  const universities = [...new Set(rows.map(r => r.university).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  els.universityFilter.innerHTML = `<option value="all">All universities</option>` + universities.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
+  if (universities.includes(current)) els.universityFilter.value = current;
+}
+
+function renderRecords() {
+  const filtered = getFilteredRows();
+  els.loadingBox.classList.add("hidden");
+  els.errorBox.classList.add("hidden");
+
+  if (!filtered.length) {
+    els.recordsGrid.innerHTML = "";
+    els.pagination.innerHTML = "";
+    els.emptyBox.classList.remove("hidden");
+    els.resultsCount.textContent = `0 of ${normalizedRows.length} records`;
+    return;
+  }
+
+  els.emptyBox.classList.add("hidden");
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = filtered.slice(start, start + PAGE_SIZE);
+
+  els.resultsCount.textContent = `Showing ${start + 1}-${Math.min(start + pageRows.length, filtered.length)} of ${filtered.length} record${filtered.length === 1 ? "" : "s"}` + (filtered.length !== normalizedRows.length ? ` · filtered from ${normalizedRows.length}` : "");
+
+  els.recordsGrid.innerHTML = pageRows.map(item => {
+    const visaReceived = isVisaReceived(item);
+    const interviewClass = item.interview === "Yes" ? "blue" : item.interview === "No" ? "gold" : "red";
+    const daysText = Number.isFinite(item.daysToVisa) ? `${item.daysToVisa} day${item.daysToVisa === 1 ? "" : "s"} after appointment` : "Timeline not complete";
+    return `
+      <article class="record-card">
+        <div class="record-top">
+          <div>
+            <div class="record-title">${highlight(item.university)}</div>
+            <div class="record-subtitle">${highlight(item.program)}</div>
+          </div>
+          <div class="badges">
+            <span class="badge ${visaReceived ? "green" : "gold"}">${visaReceived ? "Visa received" : "Not received yet"}</span>
+            <span class="badge ${interviewClass}">Interview: ${escapeHtml(item.interview)}</span>
+          </div>
+        </div>
+        <div class="dates-row">
+          <div class="date-box">
+            <div class="date-label">Confirmation</div>
+            <div class="date-value">${highlight(item.confirmationDate || "—")}</div>
+          </div>
+          <div class="date-box">
+            <div class="date-label">Visa appointment</div>
+            <div class="date-value">${highlight(item.appointmentDate || "—")}</div>
+          </div>
+          <div class="date-box">
+            <div class="date-label">Visa received</div>
+            <div class="date-value">${highlight(item.visaReceivedDate || "—")}</div>
+          </div>
+        </div>
+        <div class="experience ${item.experience ? "" : "empty"}">${item.experience ? highlight(item.experience) : "No written experience has been added for this record yet."}</div>
+        <div class="utility-row">
+          <span>${escapeHtml(daysText)}</span>
+          <span>${item.timestamp ? "Submitted: " + escapeHtml(item.timestamp) : ""}</span>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  if (totalPages <= 1) { els.pagination.innerHTML = ""; return; }
+  let html = `<button class="page-btn" data-page="prev" ${currentPage === 1 ? "disabled" : ""}>‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+      html += `<button class="page-btn ${i === currentPage ? "active" : ""}" data-page="${i}">${i}</button>`;
+    } else if (Math.abs(i - currentPage) === 2) {
+      html += `<span style="color:var(--faint);padding:0 .2rem">…</span>`;
+    }
+  }
+  html += `<button class="page-btn" data-page="next" ${currentPage === totalPages ? "disabled" : ""}>›</button>`;
+  els.pagination.innerHTML = html;
+  els.pagination.querySelectorAll(".page-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const p = btn.dataset.page;
+      if (p === "prev") currentPage -= 1;
+      else if (p === "next") currentPage += 1;
+      else currentPage = Number(p);
+      renderRecords();
+      document.getElementById("records").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+async function loadData() {
+  setStatus("loading", "Loading live data...");
+  els.loadingBox.classList.remove("hidden");
+  els.errorBox.classList.add("hidden");
+  try {
+    const response = await fetch(buildCsvUrl(), { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const csvText = await response.text();
+    const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+    if (parsed.errors && parsed.errors.length) console.warn(parsed.errors);
+    allRows = parsed.data || [];
+    normalizedRows = normalizeRows(allRows);
+    renderUniversityOptions(normalizedRows);
+    renderStats(normalizedRows);
+    currentPage = 1;
+    renderRecords();
+    setStatus("ok", "Live data loaded");
+    els.lastUpdated.textContent = "Last synced: " + new Date().toLocaleString();
+  } catch (error) {
+    console.error(error);
+    setStatus("error", "Could not load data");
+    els.loadingBox.classList.add("hidden");
+    els.emptyBox.classList.add("hidden");
+    els.errorBox.classList.remove("hidden");
+    els.resultsCount.textContent = "Data loading failed";
+  }
+}
+
+function debounce(fn, delay = 180) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  els.themeToggle.textContent = theme === "dark" ? "☀" : "☾";
+  localStorage.setItem("visaExperienceTheme", theme);
+}
+
+function init() {
+  const storedTheme = localStorage.getItem("visaExperienceTheme");
+  applyTheme(storedTheme || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+
+  if (EXPERIENCE_FORM_URL.trim()) {
+    [els.submitTop, els.submitHero].forEach(a => {
+      a.href = EXPERIENCE_FORM_URL.trim();
+      a.classList.remove("hidden-btn");
+    });
+  }
+
+  els.themeToggle.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    applyTheme(current === "dark" ? "light" : "dark");
+  });
+
+  [els.searchInput, els.universityFilter, els.interviewFilter, els.visaStatusFilter].forEach(el => {
+    el.addEventListener(el.tagName === "INPUT" ? "input" : "change", debounce(() => {
+      currentPage = 1;
+      renderRecords();
+    }));
+  });
+
+  els.refreshBtn.addEventListener("click", loadData);
+  loadData();
+  setInterval(loadData, 60000);
+}
+
+init();
+</script>
+</body>
+</html>

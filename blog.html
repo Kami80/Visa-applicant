@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Blog | Admission & Visa Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f4ec;
+      --bg-soft: #fffaf1;
+      --surface: rgba(255, 255, 255, 0.78);
+      --surface-solid: #ffffff;
+      --surface-strong: rgba(255, 255, 255, 0.94);
+      --text: #102033;
+      --text-soft: #526071;
+      --text-muted: #7a8797;
+      --border: rgba(32, 47, 72, 0.12);
+      --navy: #0f172a;
+      --navy-2: #1e335b;
+      --gold: #c8a45d;
+      --gold-2: #a9833f;
+      --blue: #4766ff;
+      --green: #16825d;
+      --rose: #d14d72;
+      --shadow: 0 24px 70px rgba(15, 23, 42, 0.12);
+      --shadow-soft: 0 16px 36px rgba(15, 23, 42, 0.08);
+      --radius-lg: 30px;
+      --radius-md: 20px;
+      --radius-sm: 14px;
+      --nav-height: 76px;
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #08111f;
+      --bg-soft: #111c2d;
+      --surface: rgba(21, 32, 52, 0.78);
+      --surface-solid: #121d2f;
+      --surface-strong: rgba(23, 35, 56, 0.96);
+      --text: #edf3ff;
+      --text-soft: #b8c5d9;
+      --text-muted: #8190a7;
+      --border: rgba(255, 255, 255, 0.12);
+      --navy: #060b14;
+      --navy-2: #142846;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+      --shadow-soft: 0 16px 36px rgba(0, 0, 0, 0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-height: 100vh;
+      font-family: Manrope, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(200, 164, 93, 0.24), transparent 36rem),
+        radial-gradient(circle at top right, rgba(71, 102, 255, 0.16), transparent 34rem),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent 78%);
+      z-index: -1;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .shell {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      backdrop-filter: blur(22px);
+      background: color-mix(in srgb, var(--navy) 86%, transparent);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      min-width: 0;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--gold), #f2d99b);
+      color: #111827;
+      box-shadow: 0 10px 26px rgba(200, 164, 93, 0.22);
+      flex: 0 0 auto;
+    }
+
+    .brand-copy { display: grid; line-height: 1.15; min-width: 0; }
+    .brand-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .brand-subtitle { color: rgba(255,255,255,0.62); font-size: 0.76rem; font-weight: 700; letter-spacing: 0; }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-link,
+    .icon-btn,
+    .primary-btn {
+      min-height: 42px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .nav-link { padding: 0 0.95rem; font-size: 0.86rem; font-weight: 800; }
+    .icon-btn { width: 42px; font-size: 1.02rem; }
+    .primary-btn {
+      padding: 0 1.1rem;
+      background: linear-gradient(135deg, var(--gold), #e1c57f);
+      border-color: transparent;
+      color: #172033;
+      font-weight: 900;
+      box-shadow: 0 14px 32px rgba(200, 164, 93, 0.26);
+      font-size: 0.86rem;
+    }
+
+    .nav-link:hover,
+    .icon-btn:hover,
+    .primary-btn:hover { transform: translateY(-1px); }
+    .nav-link:hover,
+    .icon-btn:hover { background: rgba(255,255,255,0.14); }
+
+    .hero {
+      padding: 5rem 0 3rem;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 1.4rem;
+      align-items: stretch;
+    }
+
+    .hero-card,
+    .featured-card,
+    .panel,
+    .post-card,
+    .post-detail {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(24px);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .hero-card {
+      padding: clamp(1.35rem, 4vw, 3rem);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -6rem -7rem auto;
+      width: 18rem;
+      height: 18rem;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,164,93,0.28), transparent 68%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.72rem;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--gold) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--gold) 28%, transparent);
+      color: var(--gold-2);
+      font-weight: 900;
+      font-size: 0.76rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1.1rem;
+    }
+
+    .hero h1 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(2.2rem, 6vw, 4.8rem);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      max-width: 820px;
+      margin-bottom: 1.1rem;
+    }
+
+    .hero p {
+      color: var(--text-soft);
+      font-size: clamp(1rem, 2vw, 1.15rem);
+      max-width: 720px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .hero-actions a,
+    .hero-actions button {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.78rem 1rem;
+      font-weight: 900;
+      background: var(--surface-strong);
+      color: var(--text);
+      box-shadow: 0 12px 28px rgba(15,23,42,0.06);
+    }
+
+    .hero-actions a:first-child {
+      background: linear-gradient(135deg, var(--navy-2), var(--navy));
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .featured-card {
+      padding: 1.3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 330px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .featured-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(71,102,255,0.16), transparent 48%), radial-gradient(circle at bottom right, rgba(200,164,93,0.24), transparent 46%);
+      pointer-events: none;
+    }
+
+    .featured-content { position: relative; z-index: 1; }
+    .featured-label { font-weight: 900; color: var(--gold-2); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; }
+    .featured-card h2 { font-family: "Playfair Display", Georgia, serif; line-height: 1; letter-spacing: -0.045em; font-size: clamp(1.8rem, 4vw, 2.6rem); margin-bottom: 0.9rem; }
+    .featured-card p { color: var(--text-soft); }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+      margin-top: 1rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border-radius: 999px;
+      padding: 0.34rem 0.7rem;
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text-soft);
+      font-size: 0.78rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .pill.accent { color: #172033; background: color-mix(in srgb, var(--gold) 52%, white); border-color: transparent; }
+
+    main { padding-bottom: 3.5rem; }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin: 2rem 0 1rem;
+    }
+
+    .section-head h2 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+
+    .section-head p { color: var(--text-muted); margin-top: 0.35rem; }
+
+    .panel {
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      margin-bottom: 1.25rem;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .search-box {
+      position: relative;
+      min-width: 0;
+    }
+
+    .search-box input {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text);
+      border-radius: 999px;
+      min-height: 48px;
+      padding: 0 1rem 0 2.7rem;
+      outline: none;
+      font-weight: 700;
+    }
+
+    .search-box input:focus { border-color: color-mix(in srgb, var(--gold) 62%, var(--border)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 15%, transparent); }
+    .search-box span { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text-soft);
+      border-radius: 999px;
+      min-height: 42px;
+      padding: 0 0.85rem;
+      font-weight: 900;
+      font-size: 0.82rem;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--navy-2), var(--navy));
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .blog-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .post-card {
+      padding: 1.1rem;
+      border-radius: var(--radius-md);
+      display: flex;
+      min-height: 270px;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .post-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow);
+      border-color: color-mix(in srgb, var(--gold) 40%, var(--border));
+    }
+
+    .post-card h3 {
+      font-size: 1.25rem;
+      line-height: 1.18;
+      letter-spacing: -0.035em;
+      margin: 0.9rem 0 0.65rem;
+    }
+
+    .post-card p { color: var(--text-soft); font-size: 0.94rem; }
+
+    .post-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    .category-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--gold);
+      display: inline-block;
+    }
+
+    .category-dot.visa { background: var(--blue); }
+    .category-dot.admission { background: var(--gold); }
+    .category-dot.guide { background: var(--green); }
+    .category-dot.news { background: var(--rose); }
+
+    .read-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 1rem;
+      border-radius: 999px;
+      background: var(--surface-strong);
+      border: 1px solid var(--border);
+      padding: 0.68rem 0.88rem;
+      font-size: 0.86rem;
+      font-weight: 900;
+      align-self: flex-start;
+    }
+
+    .post-detail {
+      padding: clamp(1.2rem, 4vw, 2.2rem);
+      margin-bottom: 1.3rem;
+      display: none;
+    }
+
+    .post-detail.visible { display: block; }
+
+    .post-detail h2 {
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+      margin: 0.8rem 0 1rem;
+    }
+
+    .post-body {
+      max-width: 780px;
+      margin-top: 1.2rem;
+      color: var(--text-soft);
+      font-size: 1.04rem;
+    }
+
+    .post-body p + p { margin-top: 1rem; }
+    .post-body ul { margin: 1rem 0 1rem 1.2rem; }
+    .post-body li + li { margin-top: 0.45rem; }
+    .post-body strong { color: var(--text); }
+
+    .back-btn {
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.66rem 0.9rem;
+      font-weight: 900;
+    }
+
+    .empty-state {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      background: var(--surface);
+      display: none;
+    }
+
+    .empty-state.visible { display: block; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 2rem 0 3rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 980px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .blog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      :root { --nav-height: auto; }
+      .topbar { height: auto; padding: 0.75rem 0; }
+      .topbar-inner { align-items: flex-start; }
+      .brand-title { max-width: 190px; }
+      .brand-subtitle { display: none; }
+      .nav-actions { gap: 0.4rem; }
+      .nav-link { display: none; }
+      .primary-btn { display: none; }
+      .hero { padding: 2rem 0 1.6rem; }
+      .panel { grid-template-columns: 1fr; }
+      .filter-tabs { justify-content: flex-start; }
+      .blog-grid { grid-template-columns: 1fr; }
+      .featured-card { min-height: 0; }
+      .section-head { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="index.html" aria-label="Back to dashboard">
+        <span class="brand-icon">✦</span>
+        <span class="brand-copy">
+          <span class="brand-title">Admission & Visa Tracker</span>
+          <span class="brand-subtitle">Blog and updates</span>
+        </span>
+      </a>
+      <div class="nav-actions">
+        <a class="nav-link" href="index.html">Dashboard</a>
+        <a class="nav-link" href="visa-experience.html">Visa Experiences</a>
+        <a class="nav-link" href="blog.html">Blog</a>
+        <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle dark mode">☾</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="shell hero-grid">
+      <section class="hero-card">
+        <span class="eyebrow">Editorial Hub</span>
+        <h1>Guides, updates, and visa stories in one place.</h1>
+        <p>Use this page for short announcements, useful application guides, visa appointment notes, and cohort updates. Everything is static and GitHub Pages-friendly.</p>
+        <div class="hero-actions">
+          <a href="#posts">Browse posts</a>
+          <button type="button" id="copyTemplateBtn">Copy post template</button>
+        </div>
+      </section>
+
+      <aside class="featured-card" id="featuredCard" aria-label="Featured blog post">
+        <div class="featured-content">
+          <div class="featured-label">Featured</div>
+          <h2 id="featuredTitle">Loading featured post</h2>
+          <p id="featuredExcerpt"></p>
+          <div class="meta-row" id="featuredMeta"></div>
+        </div>
+        <a class="read-link" id="featuredLink" href="#posts">Read featured →</a>
+      </aside>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="post-detail" id="postDetail" aria-live="polite"></section>
+
+    <section id="posts">
+      <div class="section-head">
+        <div>
+          <h2>Latest posts</h2>
+          <p id="postCount">Search and filter the blog archive.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <label class="search-box">
+          <span>⌕</span>
+          <input id="searchInput" type="search" placeholder="Search posts, categories, dates..." autocomplete="off" />
+        </label>
+        <div class="filter-tabs" id="filterTabs"></div>
+      </div>
+
+      <div class="blog-grid" id="blogGrid"></div>
+      <div class="empty-state" id="emptyState">No posts match your search or filter.</div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell">Blog page for Admission & Visa Tracker · Built for GitHub Pages</div>
+  </footer>
+
+  <script>
+    // ============================================================
+    // BLOG POSTS
+    // Add, remove, or edit posts here. Keep each slug unique.
+    // category options can be anything, but short labels look better.
+    // ============================================================
+    const BLOG_POSTS = [
+      {
+        slug: "how-to-share-visa-experience",
+        title: "How to share a useful visa experience",
+        date: "2026-07-03",
+        category: "Guide",
+        featured: true,
+        excerpt: "A short structure for writing a visa experience that actually helps future applicants understand the timeline and process.",
+        body: [
+          "A good visa experience post should be practical, chronological, and honest. The most useful details are the date of the appointment, whether there was an interview, the questions asked, the date the visa was issued, and any documents that were checked carefully.",
+          "Avoid writing only general statements such as “it was easy” or “it was stressful.” Instead, explain what happened step by step. Mention how long the appointment took, whether the officer asked about your university, accommodation, financial documents, or travel plan.",
+          "Recommended structure:",
+          "<ul><li><strong>Appointment date:</strong> the exact date of your visa appointment.</li><li><strong>Interview:</strong> whether you had an interview and what was asked.</li><li><strong>Result:</strong> when you received the visa or whether it is still pending.</li><li><strong>Advice:</strong> one or two practical tips for the next applicants.</li></ul>"
+        ]
+      },
+      {
+        slug: "universitaly-confirmation-timeline",
+        title: "Understanding the Universitaly confirmation timeline",
+        date: "2026-07-02",
+        category: "Admission",
+        featured: false,
+        excerpt: "A simple explanation of how confirmation dates can vary across universities and why comparing timelines can be helpful.",
+        body: [
+          "Universitaly confirmation dates are not always identical across universities or even across programs inside the same university. Some students receive confirmation quickly, while others wait longer depending on document review, university workload, or missing information.",
+          "The tracker helps students compare timelines without relying on scattered messages. By collecting university name, program name, confirmation date, and visa appointment date in one place, everyone gets a clearer picture of the process.",
+          "When using the tracker, remember that the data reflects individual submissions. It should be treated as a helpful reference, not an official guarantee of timing."
+        ]
+      },
+      {
+        slug: "visa-appointment-notes",
+        title: "What to write after your visa appointment",
+        date: "2026-07-01",
+        category: "Visa",
+        featured: false,
+        excerpt: "The most important details to record immediately after a visa appointment while everything is still fresh.",
+        body: [
+          "Right after your appointment, write down the details while you still remember them. Small details can become very useful for other students, especially if the process changes slightly between applicants.",
+          "Include whether the appointment involved an interview, how many questions were asked, which documents were checked, whether fingerprints were taken, and whether the officer gave any instruction about passport collection or further waiting.",
+          "The best visa experience posts are clear and calm. They do not need to be long; they just need to answer the questions future applicants are likely to have."
+        ]
+      }
+    ];
+
+    const $ = selector => document.querySelector(selector);
+    const state = { category: "All", query: "" };
+
+    const categoryClass = category => {
+      const c = category.toLowerCase();
+      if (c.includes("visa")) return "visa";
+      if (c.includes("admission")) return "admission";
+      if (c.includes("guide")) return "guide";
+      return "news";
+    };
+
+    const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[char]));
+
+    const formatDate = value => {
+      const date = new Date(`${value}T12:00:00`);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    };
+
+    const readingTime = post => {
+      const text = [post.title, post.excerpt, ...(post.body || [])].join(" ").replace(/<[^>]+>/g, " ");
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      return Math.max(1, Math.ceil(words / 190));
+    };
+
+    function setTheme(mode) {
+      document.documentElement.dataset.theme = mode;
+      localStorage.setItem("blog-theme", mode);
+      $("#themeToggle").textContent = mode === "dark" ? "☀" : "☾";
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem("blog-theme") || localStorage.getItem("admission-tracker-theme");
+      const preferred = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      setTheme(saved || preferred);
+    }
+
+    function renderFeatured() {
+      const featured = BLOG_POSTS.find(post => post.featured) || BLOG_POSTS[0];
+      if (!featured) return;
+      $("#featuredTitle").textContent = featured.title;
+      $("#featuredExcerpt").textContent = featured.excerpt;
+      $("#featuredMeta").innerHTML = `
+        <span class="pill accent">${escapeHtml(featured.category)}</span>
+        <span class="pill">${formatDate(featured.date)}</span>
+        <span class="pill">${readingTime(featured)} min read</span>
+      `;
+      $("#featuredLink").href = `#${featured.slug}`;
+    }
+
+    function renderFilters() {
+      const categories = ["All", ...Array.from(new Set(BLOG_POSTS.map(post => post.category))).sort()];
+      $("#filterTabs").innerHTML = categories.map(category => `
+        <button class="tab-btn ${category === state.category ? "active" : ""}" type="button" data-category="${escapeHtml(category)}">${escapeHtml(category)}</button>
+      `).join("");
+
+      document.querySelectorAll(".tab-btn").forEach(button => {
+        button.addEventListener("click", () => {
+          state.category = button.dataset.category;
+          renderFilters();
+          renderPosts();
+        });
+      });
+    }
+
+    function getFilteredPosts() {
+      const q = state.query.trim().toLowerCase();
+      return BLOG_POSTS
+        .slice()
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+        .filter(post => state.category === "All" || post.category === state.category)
+        .filter(post => {
+          if (!q) return true;
+          const haystack = [post.title, post.category, post.date, post.excerpt, ...(post.body || [])].join(" ").toLowerCase();
+          return haystack.includes(q);
+        });
+    }
+
+    function renderPosts() {
+      const posts = getFilteredPosts();
+      $("#postCount").textContent = `${posts.length} post${posts.length === 1 ? "" : "s"} shown`;
+      $("#emptyState").classList.toggle("visible", posts.length === 0);
+      $("#blogGrid").innerHTML = posts.map(post => `
+        <article class="post-card">
+          <div>
+            <div class="post-topline">
+              <span class="pill"><span class="category-dot ${categoryClass(post.category)}"></span>${escapeHtml(post.category)}</span>
+              <span class="pill">${readingTime(post)} min</span>
+            </div>
+            <h3>${escapeHtml(post.title)}</h3>
+            <p>${escapeHtml(post.excerpt)}</p>
+          </div>
+          <div>
+            <div class="meta-row">
+              <span class="pill">${formatDate(post.date)}</span>
+            </div>
+            <a class="read-link" href="#${escapeHtml(post.slug)}">Read post →</a>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function findPostByHash() {
+      const slug = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+      if (!slug || slug === "posts") return null;
+      return BLOG_POSTS.find(post => post.slug === slug) || null;
+    }
+
+    function renderDetailFromHash() {
+      const post = findPostByHash();
+      const detail = $("#postDetail");
+      if (!post) {
+        detail.classList.remove("visible");
+        detail.innerHTML = "";
+        return;
+      }
+
+      detail.innerHTML = `
+        <button class="back-btn" type="button" id="closePost">← Back to all posts</button>
+        <div class="meta-row">
+          <span class="pill accent">${escapeHtml(post.category)}</span>
+          <span class="pill">${formatDate(post.date)}</span>
+          <span class="pill">${readingTime(post)} min read</span>
+        </div>
+        <h2>${escapeHtml(post.title)}</h2>
+        <p>${escapeHtml(post.excerpt)}</p>
+        <div class="post-body">
+          ${(post.body || []).map(paragraph => {
+            const html = String(paragraph || "");
+            if (/^\s*<ul[\s>]/i.test(html)) return html;
+            return `<p>${escapeHtml(html)}</p>`;
+          }).join("")}
+        </div>
+      `;
+      detail.classList.add("visible");
+      $("#closePost").addEventListener("click", () => {
+        history.pushState("", document.title, window.location.pathname + "#posts");
+        renderDetailFromHash();
+        $("#posts").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      detail.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function copyPostTemplate() {
+      const template = `{
+  slug: "new-post-slug",
+  title: "New post title",
+  date: "2026-07-03",
+  category: "Guide",
+  featured: false,
+  excerpt: "One short summary sentence for the post.",
+  body: [
+    "First paragraph of the post.",
+    "Second paragraph of the post."
+  ]
+}`;
+
+      navigator.clipboard?.writeText(template).then(() => {
+        $("#copyTemplateBtn").textContent = "Template copied";
+        setTimeout(() => $("#copyTemplateBtn").textContent = "Copy post template", 1600);
+      }).catch(() => {
+        alert(template);
+      });
+    }
+
+    function init() {
+      initTheme();
+      renderFeatured();
+      renderFilters();
+      renderPosts();
+      renderDetailFromHash();
+
+      $("#themeToggle").addEventListener("click", () => {
+        const current = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+        setTheme(current === "dark" ? "light" : "dark");
+      });
+
+      $("#searchInput").addEventListener("input", event => {
+        state.query = event.target.value;
+        renderPosts();
+      });
+
+      $("#copyTemplateBtn").addEventListener("click", copyPostTemplate);
+      window.addEventListener("hashchange", renderDetailFromHash);
+    }
+
+    init();
+  </script>
+</body>
+</html>
