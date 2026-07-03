@@ -336,6 +336,36 @@ input:focus, select:focus { border-color: rgba(182,138,70,0.68); box-shadow: 0 0
   white-space: pre-wrap;
 }
 .experience.empty { color: var(--faint); font-style: italic; }
+
+.extra-details {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+.extra-item {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.62rem 0.72rem;
+  background: rgba(255,255,255,0.25);
+  min-width: 0;
+}
+[data-theme="dark"] .extra-item { background: rgba(15,23,42,0.32); }
+.extra-label {
+  color: var(--faint);
+  font-weight: 900;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.extra-value {
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin-top: 0.18rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+@media (max-width: 640px) { .extra-details { grid-template-columns: 1fr; } }
 .utility-row { margin-top: 0.85rem; display: flex; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; color: var(--faint); font-size: 0.79rem; }
 
 .state-box {
@@ -518,8 +548,9 @@ footer { padding: 2.5rem 0 3rem; text-align: center; color: var(--faint); font-s
         <li>Program name</li>
         <li>When did you get your Universitaly summary confirmation?</li>
         <li>When is your visa appointment?</li>
-        <li>When did you receive your visa?</li>
+        <li>When did you receive your visa? / visa result</li>
         <li>Did you have an interview?</li>
+        <li>Interview questions, checked documents, appointment duration, and advice if available</li>
         <li>Describe your visa experience</li>
       </ul>
     </details>
@@ -532,10 +563,10 @@ footer { padding: 2.5rem 0 3rem; text-align: center; color: var(--faint); font-s
 
 <script>
 // ============================================================
-// CONFIG
-// 1) If you use the same spreadsheet, keep SHEET_ID.
-// 2) If the visa experiences are in another tab, change SHEET_GID.
-// 3) Best option: Publish that tab as CSV and paste the link in PUBLISHED_CSV_URL.
+// VISA EXPERIENCE PAGE CONFIG
+// This page reads the same Google Sheet and maps the new visa
+// experience columns automatically. Keep SHEET_ID unless the Sheet changes.
+// If your visa experience data is in another tab, change SHEET_GID.
 // ============================================================
 const SHEET_ID = "1FpjTPs8_U8eSZ5h2jDz5dzv-pTLc66UQJE8wom7aM00";
 const SHEET_GID = "0";
@@ -545,46 +576,50 @@ const EXPERIENCE_FORM_URL = "";
 const PAGE_SIZE = 8;
 let allRows = [];
 let normalizedRows = [];
+let detectedColumns = [];
 let currentPage = 1;
 
 const aliases = {
-  timestamp: ["Timestamp", "Submission time", "Submitted at"],
-  university: ["University name", "University", "University Name"],
-  program: ["Program name", "Program", "Major", "Course"],
+  timestamp: [
+    "Timestamp", "Submission time", "Submitted at", "Date submitted", "زمان ثبت", "تاریخ ثبت"
+  ],
+  university: [
+    "University name", "University", "University Name", "Name of university", "Italian university", "دانشگاه", "نام دانشگاه", "اسم دانشگاه"
+  ],
+  program: [
+    "Program name", "Program", "Major", "Course", "Degree programme", "Study program", "Field of study", "رشته", "نام رشته", "برنامه تحصیلی"
+  ],
   confirmationDate: [
-    "When did you get your Universitaly summary confirmation?",
-    "Universitaly confirmation date",
-    "Confirmation Date",
-    "Summary confirmation date"
+    "When did you get your Universitaly summary confirmation?", "Universitaly confirmation date", "Confirmation Date", "Summary confirmation date",
+    "Universitaly summary confirmation", "Pre-enrolment summary confirmation", "Pre enrollment confirmation", "تاریخ تایید یونیورسیتالی", "تاریخ تایید Universitaly", "تاریخ گرفتن تاییدیه یونیورسیتالی"
   ],
   appointmentDate: [
-    "When is your visa appointment?",
-    "Visa appointment date",
-    "Visa Appointment",
-    "Appointment Date"
+    "When is your visa appointment?", "Visa appointment date", "Visa Appointment", "Appointment Date", "Embassy appointment date", "Consulate appointment date",
+    "تاریخ وقت سفارت", "تاریخ وقت ویزا", "وقت سفارت", "وقت ویزا"
   ],
   visaReceivedDate: [
-    "When did you receive your visa?",
-    "When did you get your visa?",
-    "Visa received date",
-    "Visa receiving date",
-    "Date of receiving visa",
-    "Visa issue date",
-    "Visa Date"
+    "When did you receive your visa?", "When did you get your visa?", "Visa received date", "Visa receiving date", "Date of receiving visa", "Visa issue date", "Visa issued date", "Visa collection date", "Passport collection date", "Date visa was issued", "Visa result date", "تاریخ دریافت ویزا", "تاریخ گرفتن ویزا", "تاریخ صدور ویزا", "کی ویزا رو گرفتی", "کی ویزاتو گرفتی"
+  ],
+  visaResult: [
+    "Visa result", "Visa status", "Result", "Application result", "Was your visa issued?", "Did you receive your visa?", "Visa approved?", "ویزای شما صادر شد؟", "نتیجه ویزا", "وضعیت ویزا", "آیا ویزا گرفتید؟", "ویزا گرفتی؟"
   ],
   interview: [
-    "Did you have an interview?",
-    "Interview",
-    "Interview status",
-    "Had interview?",
-    "Visa interview"
+    "Did you have an interview?", "Interview", "Interview status", "Had interview?", "Visa interview", "Were you interviewed?", "Did the officer interview you?", "مصاحبه", "مصاحبه داشتی؟", "آیا مصاحبه داشتید؟", "آیا افسر مصاحبه کرد؟"
+  ],
+  interviewQuestions: [
+    "Interview questions", "Questions asked", "What questions were asked?", "Embassy questions", "Visa questions", "سوالات مصاحبه", "چه سوالاتی پرسیدند؟", "سوالات سفارت", "سوالات ویزا"
+  ],
+  checkedDocuments: [
+    "Documents checked", "Checked documents", "Which documents were checked?", "Documents reviewed", "Required documents", "مدارک بررسی شده", "چه مدارکی چک شد؟", "مدارکی که چک کردند"
+  ],
+  duration: [
+    "Appointment duration", "How long did it take?", "Duration", "Embassy duration", "مدت زمان", "وقت چقدر طول کشید", "مدت زمان وقت سفارت"
   ],
   experience: [
-    "Describe your visa experience",
-    "Visa experience",
-    "Experience text",
-    "Tell us about your visa experience",
-    "Write your visa experience"
+    "Describe your visa experience", "Visa experience", "Experience text", "Tell us about your visa experience", "Write your visa experience", "Visa appointment experience", "Embassy experience", "تجربه ویزا", "تجربه سفارت", "توضیح تجربه ویزا", "متن تجربه ویزا", "شرح تجربه ویزا"
+  ],
+  advice: [
+    "Advice", "Tips", "Your advice", "Advice for future applicants", "Recommendation", "نصیحت", "توصیه", "پیشنهاد", "نکته برای بقیه"
   ]
 };
 
@@ -622,26 +657,67 @@ function setStatus(type, text) {
   els.syncStatus.textContent = text;
 }
 
-function getCell(row, names) {
+function normalizeHeader(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[ي]/g, "ی")
+    .replace(/[ك]/g, "ک")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/[ۀة]/g, "ه")
+    .replace(/\u200c/g, "")
+    .replace(/[^a-z0-9آ-ی]/g, "");
+}
+
+function resolveHeader(row, names) {
+  const keys = Object.keys(row || {});
   for (const name of names) {
-    if (Object.prototype.hasOwnProperty.call(row, name) && String(row[name] ?? "").trim() !== "") {
-      return String(row[name]).trim();
-    }
+    if (Object.prototype.hasOwnProperty.call(row, name)) return name;
   }
-  const keys = Object.keys(row);
   for (const wanted of names) {
-    const found = keys.find(k => normalizeHeader(k) === normalizeHeader(wanted));
-    if (found && String(row[found] ?? "").trim() !== "") return String(row[found]).trim();
+    const wantedNorm = normalizeHeader(wanted);
+    const found = keys.find(k => normalizeHeader(k) === wantedNorm);
+    if (found) return found;
+  }
+  for (const wanted of names) {
+    const wantedNorm = normalizeHeader(wanted);
+    const found = keys.find(k => {
+      const kNorm = normalizeHeader(k);
+      return kNorm && wantedNorm && (kNorm.includes(wantedNorm) || wantedNorm.includes(kNorm));
+    });
+    if (found) return found;
   }
   return "";
 }
 
-function normalizeHeader(value) {
-  return String(value || "").toLowerCase().replace(/[^a-z0-9آ-ی]/g, "");
+function getCell(row, names) {
+  const key = resolveHeader(row, names);
+  if (!key) return "";
+  return String(row[key] ?? "").trim();
+}
+
+function mappedHeaderSet(row) {
+  const set = new Set();
+  Object.values(aliases).forEach(list => {
+    const key = resolveHeader(row, list);
+    if (key) set.add(normalizeHeader(key));
+  });
+  return set;
+}
+
+function getAdditionalFields(row) {
+  const mapped = mappedHeaderSet(row);
+  const skip = new Set(["", "timestamp"]);
+  return Object.keys(row || {})
+    .filter(key => !skip.has(normalizeHeader(key)))
+    .filter(key => !mapped.has(normalizeHeader(key)))
+    .map(key => ({ label: key.trim(), value: String(row[key] ?? "").trim() }))
+    .filter(field => field.label && field.value)
+    .slice(0, 8);
 }
 
 function normalizeRows(rows) {
   return rows.map((row, index) => {
+    const visaResultRaw = getCell(row, aliases.visaResult);
     const item = {
       id: index + 1,
       timestamp: getCell(row, aliases.timestamp),
@@ -650,20 +726,44 @@ function normalizeRows(rows) {
       confirmationDate: getCell(row, aliases.confirmationDate),
       appointmentDate: getCell(row, aliases.appointmentDate),
       visaReceivedDate: getCell(row, aliases.visaReceivedDate),
+      visaResult: normalizeVisaResult(visaResultRaw),
       interview: normalizeInterview(getCell(row, aliases.interview)),
-      experience: getCell(row, aliases.experience)
+      interviewQuestions: getCell(row, aliases.interviewQuestions),
+      checkedDocuments: getCell(row, aliases.checkedDocuments),
+      duration: getCell(row, aliases.duration),
+      experience: getCell(row, aliases.experience),
+      advice: getCell(row, aliases.advice),
+      additionalFields: getAdditionalFields(row)
     };
     item.daysToVisa = daysBetween(item.appointmentDate, item.visaReceivedDate);
     return item;
-  }).filter(item => item.university !== "Unknown university" || item.program !== "Unknown program" || item.experience || item.visaReceivedDate || item.appointmentDate);
+  }).filter(item => {
+    return item.university !== "Unknown university" ||
+      item.program !== "Unknown program" ||
+      item.experience ||
+      item.visaReceivedDate ||
+      item.appointmentDate ||
+      item.visaResult !== "Unknown" ||
+      item.interview !== "Unknown";
+  });
 }
 
 function normalizeInterview(value) {
   const v = String(value || "").trim();
   const l = v.toLowerCase();
   if (!v) return "Unknown";
-  if (["yes", "y", "true", "بله", "آره", "داشت", "داشتم"].some(x => l.includes(x))) return "Yes";
-  if (["no", "n", "false", "خیر", "نه", "نداشت", "نداشتم"].some(x => l.includes(x))) return "No";
+  if (["yes", "y", "true", "بله", "آره", "اري", "داشت", "داشتم", "انجام شد"].some(x => l.includes(x))) return "Yes";
+  if (["no", "n", "false", "خیر", "خير", "نه", "نداشت", "نداشتم", "بدون مصاحبه"].some(x => l.includes(x))) return "No";
+  return v;
+}
+
+function normalizeVisaResult(value) {
+  const v = String(value || "").trim();
+  const l = v.toLowerCase();
+  if (!v) return "Unknown";
+  if (["approved", "issued", "received", "yes", "granted", "accept", "قبول", "صادر", "گرفتم", "دریافت", "تاييد", "تایید"].some(x => l.includes(x))) return "Received";
+  if (["pending", "waiting", "in progress", "under process", "در انتظار", "منتظر", "بررسی", "در حال"].some(x => l.includes(x))) return "Pending";
+  if (["reject", "refused", "denied", "rejection", "رد", "ریجکت", "ريجکت"].some(x => l.includes(x))) return "Rejected";
   return v;
 }
 
@@ -708,7 +808,11 @@ function highlight(text) {
 }
 
 function isVisaReceived(item) {
-  return Boolean(item.visaReceivedDate && item.visaReceivedDate.trim());
+  return Boolean(item.visaReceivedDate && item.visaReceivedDate.trim()) || item.visaResult === "Received";
+}
+
+function isVisaPending(item) {
+  return !isVisaReceived(item) && item.visaResult !== "Rejected";
 }
 
 function getFilteredRows() {
@@ -722,9 +826,10 @@ function getFilteredRows() {
     if (interview === "yes" && item.interview !== "Yes") return false;
     if (interview === "no" && item.interview !== "No") return false;
     if (visaStatus === "received" && !isVisaReceived(item)) return false;
-    if (visaStatus === "pending" && isVisaReceived(item)) return false;
+    if (visaStatus === "pending" && !isVisaPending(item)) return false;
     if (!q) return true;
-    return [item.university, item.program, item.confirmationDate, item.appointmentDate, item.visaReceivedDate, item.interview, item.experience]
+    const extraText = item.additionalFields.map(f => `${f.label} ${f.value}`).join(" ");
+    return [item.university, item.program, item.confirmationDate, item.appointmentDate, item.visaReceivedDate, item.visaResult, item.interview, item.interviewQuestions, item.checkedDocuments, item.duration, item.experience, item.advice, extraText]
       .some(v => String(v || "").toLowerCase().includes(q));
   }).sort((a, b) => {
     const bd = parseDateLoose(b.visaReceivedDate || b.appointmentDate || b.confirmationDate || b.timestamp);
@@ -760,7 +865,7 @@ function renderStats(rows) {
   els.progressCircle.style.strokeDasharray = circumference;
   els.progressCircle.style.strokeDashoffset = circumference - (percent / 100) * circumference;
   els.progressNumber.textContent = `${percent}%`;
-  els.progressFoot.textContent = `${visaReceived} of ${total || 0} submitted records include a visa receiving date.`;
+  els.progressFoot.textContent = `${visaReceived} of ${total || 0} submitted records are marked as received or include a visa receiving date.`;
 }
 
 function renderUniversityOptions(rows) {
@@ -768,6 +873,26 @@ function renderUniversityOptions(rows) {
   const universities = [...new Set(rows.map(r => r.university).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   els.universityFilter.innerHTML = `<option value="all">All universities</option>` + universities.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("");
   if (universities.includes(current)) els.universityFilter.value = current;
+}
+
+function renderAdditionalFields(item) {
+  const blocks = [];
+  if (item.interviewQuestions) blocks.push({ label: "Interview questions", value: item.interviewQuestions });
+  if (item.checkedDocuments) blocks.push({ label: "Documents checked", value: item.checkedDocuments });
+  if (item.duration) blocks.push({ label: "Appointment duration", value: item.duration });
+  if (item.advice) blocks.push({ label: "Advice", value: item.advice });
+  item.additionalFields.forEach(field => blocks.push(field));
+  if (!blocks.length) return "";
+  return `
+    <div class="extra-details">
+      ${blocks.map(field => `
+        <div class="extra-item">
+          <div class="extra-label">${escapeHtml(field.label)}</div>
+          <div class="extra-value">${highlight(field.value)}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
 
 function renderRecords() {
@@ -793,6 +918,8 @@ function renderRecords() {
 
   els.recordsGrid.innerHTML = pageRows.map(item => {
     const visaReceived = isVisaReceived(item);
+    const resultBadge = item.visaResult !== "Unknown" ? item.visaResult : (visaReceived ? "Received" : "Not received yet");
+    const visaClass = resultBadge === "Received" ? "green" : resultBadge === "Rejected" ? "red" : "gold";
     const interviewClass = item.interview === "Yes" ? "blue" : item.interview === "No" ? "gold" : "red";
     const daysText = Number.isFinite(item.daysToVisa) ? `${item.daysToVisa} day${item.daysToVisa === 1 ? "" : "s"} after appointment` : "Timeline not complete";
     return `
@@ -803,7 +930,7 @@ function renderRecords() {
             <div class="record-subtitle">${highlight(item.program)}</div>
           </div>
           <div class="badges">
-            <span class="badge ${visaReceived ? "green" : "gold"}">${visaReceived ? "Visa received" : "Not received yet"}</span>
+            <span class="badge ${visaClass}">${escapeHtml(resultBadge)}</span>
             <span class="badge ${interviewClass}">Interview: ${escapeHtml(item.interview)}</span>
           </div>
         </div>
@@ -822,6 +949,7 @@ function renderRecords() {
           </div>
         </div>
         <div class="experience ${item.experience ? "" : "empty"}">${item.experience ? highlight(item.experience) : "No written experience has been added for this record yet."}</div>
+        ${renderAdditionalFields(item)}
         <div class="utility-row">
           <span>${escapeHtml(daysText)}</span>
           <span>${item.timestamp ? "Submitted: " + escapeHtml(item.timestamp) : ""}</span>
@@ -868,12 +996,13 @@ async function loadData() {
     const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
     if (parsed.errors && parsed.errors.length) console.warn(parsed.errors);
     allRows = parsed.data || [];
+    detectedColumns = parsed.meta?.fields || Object.keys(allRows[0] || {});
     normalizedRows = normalizeRows(allRows);
     renderUniversityOptions(normalizedRows);
     renderStats(normalizedRows);
     currentPage = 1;
     renderRecords();
-    setStatus("ok", "Live data loaded");
+    setStatus("ok", `Live data loaded · ${detectedColumns.length} columns detected`);
     els.lastUpdated.textContent = "Last synced: " + new Date().toLocaleString();
   } catch (error) {
     console.error(error);
@@ -929,5 +1058,6 @@ function init() {
 
 init();
 </script>
+
 </body>
 </html>
