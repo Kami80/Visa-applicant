@@ -552,6 +552,7 @@ footer { padding: 2.5rem 0 3rem; text-align: center; color: var(--faint); font-s
         <li>Did you have an interview?</li>
         <li>Interview questions, checked documents, appointment duration, and advice if available</li>
         <li>Describe your visa experience</li>
+        <li>Email address columns are intentionally hidden from the public page.</li>
       </ul>
     </details>
   </section>
@@ -668,6 +669,27 @@ function normalizeHeader(value) {
     .replace(/[^a-z0-9آ-ی]/g, "");
 }
 
+
+
+const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+const PRIVATE_HEADER_TOKENS = [
+  "email", "e-mail", "mailaddress", "contactemail", "gmail", "outlook",
+  "ایمیل", "ايميل", "رایانامه", "پستالکترونیکی", "پستالكترونيكي", "پستالکترونیک", "پستالكترونيك"
+].map(normalizeHeader);
+
+function isPrivateColumnLabel(label) {
+  const normalized = normalizeHeader(label);
+  return PRIVATE_HEADER_TOKENS.some(token => token && normalized.includes(token));
+}
+
+function redactEmails(value) {
+  return String(value ?? "").replace(EMAIL_PATTERN, "[email hidden]").trim();
+}
+
+function safeVisibleValue(value) {
+  return redactEmails(value);
+}
+
 function resolveHeader(row, names) {
   const keys = Object.keys(row || {});
   for (const name of names) {
@@ -710,29 +732,30 @@ function getAdditionalFields(row) {
   return Object.keys(row || {})
     .filter(key => !skip.has(normalizeHeader(key)))
     .filter(key => !mapped.has(normalizeHeader(key)))
-    .map(key => ({ label: key.trim(), value: String(row[key] ?? "").trim() }))
+    .filter(key => !isPrivateColumnLabel(key))
+    .map(key => ({ label: key.trim(), value: safeVisibleValue(row[key]) }))
     .filter(field => field.label && field.value)
     .slice(0, 8);
 }
 
 function normalizeRows(rows) {
   return rows.map((row, index) => {
-    const visaResultRaw = getCell(row, aliases.visaResult);
+    const visaResultRaw = safeVisibleValue(getCell(row, aliases.visaResult));
     const item = {
       id: index + 1,
-      timestamp: getCell(row, aliases.timestamp),
-      university: getCell(row, aliases.university) || "Unknown university",
-      program: getCell(row, aliases.program) || "Unknown program",
-      confirmationDate: getCell(row, aliases.confirmationDate),
-      appointmentDate: getCell(row, aliases.appointmentDate),
-      visaReceivedDate: getCell(row, aliases.visaReceivedDate),
+      timestamp: safeVisibleValue(getCell(row, aliases.timestamp)),
+      university: safeVisibleValue(getCell(row, aliases.university)) || "Unknown university",
+      program: safeVisibleValue(getCell(row, aliases.program)) || "Unknown program",
+      confirmationDate: safeVisibleValue(getCell(row, aliases.confirmationDate)),
+      appointmentDate: safeVisibleValue(getCell(row, aliases.appointmentDate)),
+      visaReceivedDate: safeVisibleValue(getCell(row, aliases.visaReceivedDate)),
       visaResult: normalizeVisaResult(visaResultRaw),
-      interview: normalizeInterview(getCell(row, aliases.interview)),
-      interviewQuestions: getCell(row, aliases.interviewQuestions),
-      checkedDocuments: getCell(row, aliases.checkedDocuments),
-      duration: getCell(row, aliases.duration),
-      experience: getCell(row, aliases.experience),
-      advice: getCell(row, aliases.advice),
+      interview: normalizeInterview(safeVisibleValue(getCell(row, aliases.interview))),
+      interviewQuestions: safeVisibleValue(getCell(row, aliases.interviewQuestions)),
+      checkedDocuments: safeVisibleValue(getCell(row, aliases.checkedDocuments)),
+      duration: safeVisibleValue(getCell(row, aliases.duration)),
+      experience: safeVisibleValue(getCell(row, aliases.experience)),
+      advice: safeVisibleValue(getCell(row, aliases.advice)),
       additionalFields: getAdditionalFields(row)
     };
     item.daysToVisa = daysBetween(item.appointmentDate, item.visaReceivedDate);
